@@ -18,7 +18,7 @@ KEYAUTH_SELLER_KEY = "87c3d5a7a8c98996b2cfb1669355406e"
 KEYAUTH_API_URL = "https://keyauth.win/api/seller/"
 
 # ใส่ Role ID และ Channel ID ที่ต้องการให้บอทใช้
-CUSTOMER_ROLE_ID = 1279035218430263327  
+CUSTOMER_ROLE_IDS = [1279035218430263327, 1279035215687188490]  # ✅ เพิ่มทั้ง 2 Role
 CHANNEL_ID = 1279036071619072082  
 
 # ✅ ฟังก์ชันตรวจสอบคีย์กับ KeyAuth API
@@ -70,24 +70,30 @@ class RedeemForm(ui.Modal, title="Claim Your License"):
     async def on_submit(self, interaction: discord.Interaction):
         user = interaction.user
         key = self.invoice_id.value.strip()  # รับค่าจากฟอร์มและตัดช่องว่าง
-        role = interaction.guild.get_role(CUSTOMER_ROLE_ID)
 
         # ✅ ตรวจสอบคีย์กับ KeyAuth API
         if check_key_auth(key):
-            if role:
-                await user.add_roles(role)
+            added_roles = []
+            for role_id in CUSTOMER_ROLE_IDS:
+                role = interaction.guild.get_role(role_id)
+                if role:
+                    await user.add_roles(role)
+                    added_roles.append(role.name)
+
+            if added_roles:
+                roles_text = ", ".join(added_roles)
                 await interaction.response.send_message(
-                    f"✅ **Success!** {user.mention}, คุณได้รับยศแล้ว **buyer Role**.\n"
+                    f"✅ **Success!** {user.mention}, คุณได้รับยศแล้ว **{roles_text}**.\n"
                     f"📥 โหลดโปรได้เลยที่: [คลิกที่นี่](https://discord.com/channels/923167904629928005/1346807138416328714)",
                     ephemeral=True
                 )
             else:
                 await interaction.response.send_message(
-                    "❌ **Error:** Role not found. Please contact an admin.", ephemeral=True
+                    "❌ **Error:** ไม่พบ Role ที่ต้องการ กรุณาติดต่อแอดมิน", ephemeral=True
                 )
         else:
             await interaction.response.send_message(
-                "❌ **Invalid Key:** คีย์ไม่ถูกต้อง **...** กรุณาลองใหม่!", ephemeral=True
+                "❌ **Invalid Key:** คีย์ไม่ถูกต้อง กรุณาลองใหม่!", ephemeral=True
             )
 
 # ทำให้บอทออนไลน์ตลอดเวลา
